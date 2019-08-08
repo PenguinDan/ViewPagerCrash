@@ -17,8 +17,8 @@ class MainActivity : AppCompatActivity() {
         binding.button1.setOnClickListener { openFragment(1) }
         binding.button2.setOnClickListener { openFragment(2) }
 
-        // Default open First fragment
-        openFragment(1)
+        // Default open Second fragment
+        openFragment(2)
     }
 
     private fun openFragment(fragmentToOpen: Int) {
@@ -37,6 +37,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         transaction.replace(R.id.mainFragmentFrame, fragment, "Frag$fragmentToOpen")
+        transaction.addToBackStack(null) // Comment this line to stop the error
         transaction.commit()
     }
 }
