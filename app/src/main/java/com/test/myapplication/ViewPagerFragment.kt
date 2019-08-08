@@ -6,6 +6,8 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProviders
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.adapter.FragmentViewHolder
@@ -78,7 +80,7 @@ class ViewPagerFragment : Fragment() {
         val binding: ViewPagerTestBinding =
             DataBindingUtil.inflate(inflater, R.layout.view_pager_test, container, false)
 
-        vpAdapter = VPAdapter(this, viewModel ?: throw IllegalStateException())
+        vpAdapter = VPAdapter(childFragmentManager, lifecycle, viewModel ?: throw IllegalStateException())
         binding.viewPager.apply {
             adapter = vpAdapter
             orientation = ViewPager2.ORIENTATION_HORIZONTAL
@@ -104,9 +106,10 @@ class ViewPagerFragment : Fragment() {
 }
 
 class VPAdapter(
-    fragment: Fragment,
+    childFragmentManager: FragmentManager,
+    lifecycle: Lifecycle,
     private val viewModel: ViewPagerVM
-) : FragmentStateAdapter(fragment) {
+) : FragmentStateAdapter(childFragmentManager, lifecycle) {
 
     /**
      * Returns the total number of items in the data set held by the adapter.
