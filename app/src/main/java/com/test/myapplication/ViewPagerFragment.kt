@@ -15,14 +15,13 @@ import com.test.myapplication.databinding.ViewPagerTestBinding
 import kotlinx.android.synthetic.main.view_pager_test.*
 
 class ViewPagerFragment : Fragment() {
-    private lateinit var vpAdapter : VPAdapter
+    private var vpAdapter : VPAdapter? = null
     private val imageList = listOf(
-        "https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1397110326i/18166936.jpg",
-        "https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1397110326i/18166936.jpg",
-        "https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1397110326i/18166936.jpg",
-        "https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1397110326i/18166936.jpg",
-        "https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1397110326i/18166936.jpg",
-        "https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1397110326i/18166936.jpg"
+        "https://image.goat.com/attachments/product_template_additional_pictures/images/023/422/821/original/526259_01.jpg.jpeg?1562871661",
+        "https://image.goat.com/attachments/product_template_additional_pictures/images/023/422/821/original/526259_01.jpg.jpeg?1562871661",
+        "https://image.goat.com/attachments/product_template_additional_pictures/images/023/422/821/original/526259_01.jpg.jpeg?1562871661",
+        "https://image.goat.com/attachments/product_template_additional_pictures/images/023/422/821/original/526259_01.jpg.jpeg?1562871661",
+        "https://image.goat.com/attachments/product_template_additional_pictures/images/023/422/821/original/526259_01.jpg.jpeg?1562871661"
     )
 
     /**
@@ -46,7 +45,6 @@ class ViewPagerFragment : Fragment() {
      */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        vpAdapter = VPAdapter(this)
     }
 
     /**
@@ -81,13 +79,14 @@ class ViewPagerFragment : Fragment() {
         val binding: ViewPagerTestBinding =
             DataBindingUtil.inflate(inflater, R.layout.view_pager_test, container, false)
 
+        vpAdapter = VPAdapter(this)
         binding.viewPager.apply {
             adapter = vpAdapter
             orientation = ViewPager2.ORIENTATION_VERTICAL
             registerOnPageChangeCallback(pageChangeCallback)
         }
 
-        if(vpAdapter.itemCount == 0) {
+        if(vpAdapter?.itemCount == 0) {
             addData()
         }
 
@@ -104,6 +103,8 @@ class ViewPagerFragment : Fragment() {
      * been saved but before it has been removed from its parent.
      */
     override fun onDestroyView() {
+        viewPager.adapter = null
+        vpAdapter = null
         viewPager.unregisterOnPageChangeCallback(pageChangeCallback)
         super.onDestroyView()
     }
@@ -116,14 +117,16 @@ class ViewPagerFragment : Fragment() {
          * @param position Position index of the new selected page.
          */
         override fun onPageSelected(position: Int) {
-            if(position == vpAdapter.itemCount - 2) {
-                addData()
+            vpAdapter?.let {
+                if(position == it.itemCount - 2) {
+                    addData()
+                }
             }
         }
     }
 
     private fun addData() {
-        vpAdapter.add(imageList)
+        vpAdapter?.add(imageList)
     }
 }
 
