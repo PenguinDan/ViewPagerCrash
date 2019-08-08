@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProviders
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.adapter.FragmentViewHolder
 import androidx.viewpager2.widget.ViewPager2
@@ -15,14 +16,8 @@ import com.test.myapplication.databinding.ViewPagerTestBinding
 import kotlinx.android.synthetic.main.view_pager_test.*
 
 class ViewPagerFragment : Fragment() {
-    private var vpAdapter : VPAdapter? = null
-    private val imageList = listOf(
-        "https://image.goat.com/attachments/product_template_additional_pictures/images/023/422/821/original/526259_01.jpg.jpeg?1562871661",
-        "https://image.goat.com/attachments/product_template_additional_pictures/images/023/422/821/original/526259_01.jpg.jpeg?1562871661",
-        "https://image.goat.com/attachments/product_template_additional_pictures/images/023/422/821/original/526259_01.jpg.jpeg?1562871661",
-        "https://image.goat.com/attachments/product_template_additional_pictures/images/023/422/821/original/526259_01.jpg.jpeg?1562871661",
-        "https://image.goat.com/attachments/product_template_additional_pictures/images/023/422/821/original/526259_01.jpg.jpeg?1562871661"
-    )
+    private var vpAdapter: VPAdapter? = null
+    private var viewModel: ViewPagerVM? = null
 
     /**
      * Called to do initial creation of a fragment.  This is called after
@@ -45,49 +40,48 @@ class ViewPagerFragment : Fragment() {
      */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        viewModel = ViewModelProviders.of(this).get(ViewPagerVM::class.java)
+        if(viewModel?.currPages?.isEmpty() == true) {
+            viewModel?.currPages?.add(0)
+        }
     }
 
     /**
-         * Called to have the fragment instantiate its user interface view.
-         * This is optional, and non-graphical fragments can return null. This will be called between
-         * [.onCreate] and [.onActivityCreated].
-         *
-         * A default View can be returned by calling [.Fragment] in your
-         * constructor. Otherwise, this method returns null.
-         *
-         *
-         * It is recommended to **only** inflate the layout in this method and move
-         * logic that operates on the returned View to [.onViewCreated].
-         *
-         *
-         * If you return a View from here, you will later be called in
-         * [.onDestroyView] when the view is being released.
-         *
-         * @param inflater The LayoutInflater object that can be used to inflate
-         * any views in the fragment,
-         * @param container If non-null, this is the parent view that the fragment's
-         * UI should be attached to.  The fragment should not add the view itself,
-         * but this can be used to generate the LayoutParams of the view.
-         * @param savedInstanceState If non-null, this fragment is being re-constructed
-         * from a previous saved state as given here.
-         *
-         * @return Return the View for the fragment's UI, or null.
-         */
-        override
+     * Called to have the fragment instantiate its user interface view.
+     * This is optional, and non-graphical fragments can return null. This will be called between
+     * [.onCreate] and [.onActivityCreated].
+     *
+     * A default View can be returned by calling [.Fragment] in your
+     * constructor. Otherwise, this method returns null.
+     *
+     *
+     * It is recommended to **only** inflate the layout in this method and move
+     * logic that operates on the returned View to [.onViewCreated].
+     *
+     *
+     * If you return a View from here, you will later be called in
+     * [.onDestroyView] when the view is being released.
+     *
+     * @param inflater The LayoutInflater object that can be used to inflate
+     * any views in the fragment,
+     * @param container If non-null, this is the parent view that the fragment's
+     * UI should be attached to.  The fragment should not add the view itself,
+     * but this can be used to generate the LayoutParams of the view.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed
+     * from a previous saved state as given here.
+     *
+     * @return Return the View for the fragment's UI, or null.
+     */
+    override
 
     fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val binding: ViewPagerTestBinding =
             DataBindingUtil.inflate(inflater, R.layout.view_pager_test, container, false)
 
-        vpAdapter = VPAdapter(this)
+        vpAdapter = VPAdapter(this, viewModel ?: throw IllegalStateException())
         binding.viewPager.apply {
             adapter = vpAdapter
-            orientation = ViewPager2.ORIENTATION_VERTICAL
-            registerOnPageChangeCallback(pageChangeCallback)
-        }
-
-        if(vpAdapter?.itemCount == 0) {
-            addData()
+            orientation = ViewPager2.ORIENTATION_HORIZONTAL
         }
 
         return binding.root
@@ -105,53 +99,62 @@ class ViewPagerFragment : Fragment() {
     override fun onDestroyView() {
         viewPager.adapter = null
         vpAdapter = null
-        viewPager.unregisterOnPageChangeCallback(pageChangeCallback)
         super.onDestroyView()
-    }
-
-    private val pageChangeCallback = object : ViewPager2.OnPageChangeCallback() {
-        /**
-         * This method will be invoked when a new page becomes selected. Animation is not
-         * necessarily complete.
-         *
-         * @param position Position index of the new selected page.
-         */
-        override fun onPageSelected(position: Int) {
-            vpAdapter?.let {
-                if(position == it.itemCount - 2) {
-                    addData()
-                }
-            }
-        }
-    }
-
-    private fun addData() {
-        vpAdapter?.add(imageList)
     }
 }
 
 class VPAdapter(
-    fragment: Fragment
+    fragment: Fragment,
+    private val viewModel: ViewPagerVM
 ) : FragmentStateAdapter(fragment) {
-    private val urls = ArrayList<String>()
 
     /**
      * Returns the total number of items in the data set held by the adapter.
      *
      * @return The total number of items in this adapter.
      */
-    override fun getItemCount(): Int = urls.size
+    override fun getItemCount(): Int = viewModel.currPages.size
 
-    override fun createFragment(position: Int): Fragment =
-        BaseFragment().apply {
-            arguments = Bundle().apply { putString("URL", urls[position]) }
-        }
+    /**
+     * Default implementation works for collections that don't add, move, remove items.
+     *
+     *
+     * TODO(b/122670460): add lint rule
+     * When overriding, also override [.containsItem].
+     *
+     *
+     * If the item is not a part of the collection, return [RecyclerView.NO_ID].
+     *
+     * @param position Adapter position
+     * @return stable item id [RecyclerView.Adapter.hasStableIds]
+     */
+    override fun getItemId(position: Int): Long = position.toLong()
 
-    fun add(items: List<String>) {
-        val beforeAdd = urls.size
-        urls.addAll(items)
-        notifyItemRangeInserted(beforeAdd, items.size)
-    }
+    /**
+     * Default implementation works for collections that don't add, move, remove items.
+     *
+     *
+     * TODO(b/122670460): add lint rule
+     * When overriding, also override [.getItemId]
+     */
+    override fun containsItem(itemId: Long): Boolean = itemId > -1 && itemId < viewModel.currPages.size
+
+    /**
+     * Return the view type of the item at `position` for the purposes
+     * of view recycling.
+     *
+     *
+     * The default implementation of this method returns 0, making the assumption of
+     * a single view type for the adapter. Unlike ListView adapters, types need not
+     * be contiguous. Consider using id resources to uniquely identify item view types.
+     *
+     * @param position position to query
+     * @return integer value identifying the type of the view needed to represent the item at
+     * `position`. Type codes need not be contiguous.
+     */
+    override fun getItemViewType(position: Int): Int = viewModel.currPages[position]
+
+    override fun createFragment(position: Int): Fragment = BaseFragment()
 
 }
 
@@ -183,10 +186,8 @@ class BaseFragment : Fragment() {
      * @return Return the View for the fragment's UI, or null.
      */
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        val binding : ImageItemBinding=
+        val binding: ImageItemBinding =
             DataBindingUtil.inflate(inflater, R.layout.image_item, container, false)
-
-        Glide.with(this).load(requireArguments()["URL"]).into(binding.imageItem)
 
         return binding.root
     }
